@@ -140,6 +140,44 @@ print(len(newSet))
 
 
 
+def aprioriLoop(document, minSupThres, frequentOneItemsets, finalFrequentItemsets):
+    itemSetLength = 2
+    prevFrequentItemsets = frequentOneItemsets
+
+    #generate candidate itemsets of size itemSetLength by joining size itemSetLength - 1 itemsets
+    candidateItemsets = termJoins(prevFrequentItemsets, itemSetLength)
+    #prune candidates based on their subsets
+    prunedCandidates = prune(candidateItemsets, itemSetLength, prevFrequentItemsets)
+    #check minimum support and eliminate infrequent
+    currentFrequentItemsets = minSup(prunedCandidates, document, minSupThres)
+
+    finalFrequentItemsets.update(currentFrequentItemsets)
+
+    #repeat
+    itemSetLength += 1
+    prevFrequentItemsets = currentFrequentItemsets
+
+
+
+
+
+def apriori(document, minSupThres):
+    finalFrequentItemsets = set()
+
+    termDict = termInitialize(lineList)
+    frequentTerms = {name: frequency for name, frequency in termDict.items() if frequency >= minSupThres}
+    frequentOneItemsets = dictToSet(frequentTerms)
+
+    finalFrequentItemsets.update(frequentOneItemsets)
+
+    aprioriLoop()
+
+
+
+
+
+
+
 
 
 
