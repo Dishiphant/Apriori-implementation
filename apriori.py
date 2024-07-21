@@ -106,7 +106,7 @@ def prune(candidateSet, length, prevFrequentItems):
     
 newSet = prune(newSet, 2, filtered_set)
 
-#a
+
 
 
 def supCount(candidate, lineList):
