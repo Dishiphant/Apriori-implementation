@@ -53,9 +53,9 @@ def termInitialize(lineList):
                 categoryDict[word] = 1
     return categoryDict
 
-categoryDict = termInitialize(lineList)
+# categoryDict = termInitialize(lineList)
 
-filtered_dict = {name: frequency for name, frequency in categoryDict.items() if frequency > 771}
+# filtered_dict = {name: frequency for name, frequency in categoryDict.items() if frequency > 771}
 # print(filtered_dict)
 
 def dictToSet(dict):
@@ -64,7 +64,7 @@ def dictToSet(dict):
         frequent1Itemsets.add(frozenset([item]))
     return frequent1Itemsets
 
-filtered_set = dictToSet(filtered_dict)
+# filtered_set = dictToSet(filtered_dict)
 # print(filtered_set)
 
 
@@ -86,7 +86,7 @@ def termJoins(prevFrequentItems, kLength):
 
 
 
-newSet = termJoins(filtered_set, 2)
+# newSet = termJoins(filtered_set, 2)
 
 
 
@@ -104,7 +104,7 @@ def prune(candidateSet, length, prevFrequentItems):
         prunedCandidates = {candidate for candidate in candidateSet if all(subset in prevFrequentItems for subset in pruningSubsets)}
         return prunedCandidates
     
-newSet = prune(newSet, 2, filtered_set)
+# newSet = prune(newSet, 2, filtered_set)
 
 
 
@@ -132,36 +132,39 @@ def minSup(candidateSet, lineList, supThres):
     
     return trueFrequentSet
 
-trueSet = minSup(newSet, lineList, 771)
-print(trueSet)
-print(len(trueSet))
-print(len(newSet))
+# trueSet = minSup(newSet, lineList, 771)
+# print(trueSet)
+# print(len(trueSet))
+# print(len(newSet))
 
 
 
 
-def aprioriLoop(document, minSupThres, frequentOneItemsets, finalFrequentItemsets):
+def aprioriLoop(lineList, minSupThres, frequentOneItemsets, finalFrequentItemsets):
     itemSetLength = 2
     prevFrequentItemsets = frequentOneItemsets
+    currentFrequentItemsets = frequentOneItemsets
 
-    #generate candidate itemsets of size itemSetLength by joining size itemSetLength - 1 itemsets
-    candidateItemsets = termJoins(prevFrequentItemsets, itemSetLength)
-    #prune candidates based on their subsets
-    prunedCandidates = prune(candidateItemsets, itemSetLength, prevFrequentItemsets)
-    #check minimum support and eliminate infrequent
-    currentFrequentItemsets = minSup(prunedCandidates, document, minSupThres)
+    while(len(currentFrequentItemsets) > 0):
+        #generate candidate itemsets of size itemSetLength by joining size itemSetLength - 1 itemsets
+        candidateItemsets = termJoins(prevFrequentItemsets, itemSetLength)
+        #prune candidates based on their subsets
+        prunedCandidates = prune(candidateItemsets, itemSetLength, prevFrequentItemsets)
+        #check minimum support and eliminate infrequent
+        currentFrequentItemsets = minSup(prunedCandidates, lineList, minSupThres)
+        #add current length frequent itemsets to final list
+        finalFrequentItemsets.update(currentFrequentItemsets)
 
-    finalFrequentItemsets.update(currentFrequentItemsets)
-
-    #repeat
-    itemSetLength += 1
-    prevFrequentItemsets = currentFrequentItemsets
-
+        #increment 
+        itemSetLength += 1
+        prevFrequentItemsets = currentFrequentItemsets
+        print('itemSetLength', itemSetLength)
 
 
 
 
-def apriori(document, minSupThres):
+
+def apriori(lineList, minSupThres):
     finalFrequentItemsets = set()
 
     termDict = termInitialize(lineList)
@@ -170,55 +173,10 @@ def apriori(document, minSupThres):
 
     finalFrequentItemsets.update(frequentOneItemsets)
 
-    aprioriLoop()
+    aprioriLoop(lineList, minSupThres, frequentOneItemsets, finalFrequentItemsets)
+
+    print(finalFrequentItemsets)
 
 
-
-
-
-
-
-
-
-
-
-# #gets list of terms from list of lines
-
-# def termInitialize(lineList):
-#     categoryDict = {}
-
-#     for line in lineList:
-#         lineWords = wordSplit(line, splitRule)
-#         for term in lineWords:
-#             termList = list()
-#             termList.append(term)
-#             if(termList in categoryDict):
-#                 categoryDict[termList] = categoryDict[termList] + 1
-#             else:
-#                 categoryDict[termList] = 1
-#     return categoryDict
-
-# categoryDict = termInitialize(lineList)
-
-# print(categoryDict)
-
-# # filtered_dict = {name: frequency for name, frequency in categoryDict.items() if frequency > 771}
-# # print(filtered_dict)
-
-# # def patternDictionary(lineList, candidateList):
-# #     patternDict = {}
-# #     for line in lineList:
-# #         lineWords = wordSplit(line, splitRule)
-# #         if (for all term in candidateList) term in lineWords:
-
-
-# #         for term in lineWords:
-# #             if(term in categoryDict):
-# #                 categoryDict[term] = categoryDict[term] + 1
-# #             else:
-# #                 categoryDict[term] = 1
-# #     return categoryDict
-
-
-
+apriori(lineList, 771)
 
