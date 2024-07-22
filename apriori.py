@@ -16,6 +16,7 @@ def fileScan(filePath):
             lineList.append(line.strip())
     return lineList
 
+
 lineList = fileScan(categoriesFile)
 
 # ========================================
@@ -53,10 +54,10 @@ def termInitialize(lineList):
                 categoryDict[word] = 1
     return categoryDict
 
-# categoryDict = termInitialize(lineList)
+categoryDict = termInitialize(lineList)
 
-# filtered_dict = {name: frequency for name, frequency in categoryDict.items() if frequency > 771}
-# print(filtered_dict)
+filtered_dict = {name: frequency for name, frequency in categoryDict.items() if frequency >= 771.85}
+print(filtered_dict)
 
 def dictToSet(dict):
     frequent1Itemsets = set()
@@ -64,8 +65,8 @@ def dictToSet(dict):
         frequent1Itemsets.add(frozenset([item]))
     return frequent1Itemsets
 
-# filtered_set = dictToSet(filtered_dict)
-# print(filtered_set)
+filtered_set = dictToSet(filtered_dict)
+print(filtered_set)
 
 
 
@@ -78,15 +79,15 @@ def termJoins(prevFrequentItems, kLength):
     newCandidates = set()
     for set1 in prevFrequentItems:
         for set2 in prevFrequentItems:
-            joinSet = set(set1.union(set2))
-            if(len(joinSet) == kLength):
-                newCandidates.add(frozenset(joinSet))
+            unionSet = set1.union(set2)
+            if(len(unionSet) == kLength):
+                newCandidates.add(frozenset(unionSet))
     return newCandidates
 
 
 
 
-# newSet = termJoins(filtered_set, 2)
+newSet = termJoins(filtered_set, 2)
 
 
 
@@ -99,12 +100,14 @@ def genPruningSubsets(candidate, length):
     return pruningSubsets
 
 def prune(candidateSet, length, prevFrequentItems):
+    prunedCandidates = set()
     for candidate in candidateSet:
         pruningSubsets = genPruningSubsets(candidate, length-1)
-        prunedCandidates = {candidate for candidate in candidateSet if all(subset in prevFrequentItems for subset in pruningSubsets)}
-        return prunedCandidates
+        if all(subset in prevFrequentItems for subset in pruningSubsets):
+            prunedCandidates.add(candidate)
+    return prunedCandidates
     
-# newSet = prune(newSet, 2, filtered_set)
+newSet = prune(newSet, 2, filtered_set)
 
 
 
@@ -117,7 +120,7 @@ def supCount(candidate, lineList):
             count += 1
     return count
 
-def minSup(candidateSet, lineList, supThres):
+def minSup(candidateSet, lineList, supThres, file):
     trueFrequentSet = set()
     k = 0
     for candidate in candidateSet:
@@ -129,31 +132,37 @@ def minSup(candidateSet, lineList, supThres):
             print('count ', count)
             print(candidate)
             print('k', k)
+            if file != None:
+                inputString = str(count) + ":"
+                for category in candidate:
+                    inputString += (category + ";")
+                inputString = inputString[:-1] + "\n"
+                file.write(inputString)
     
     return trueFrequentSet
 
-# trueSet = minSup(newSet, lineList, 771)
-# print(trueSet)
-# print(len(trueSet))
-# print(len(newSet))
+trueSet = minSup(newSet, lineList, 771.85, None)
+print(trueSet)
+print(len(trueSet))
+print(len(newSet))
 
 
 
 
-def aprioriLoop(lineList, minSupThres, frequentOneItemsets, finalFrequentItemsets):
+def aprioriLoop(lineList, minSupThres, frequentOneItemsets, finalFrequentItemsets, file):
     itemSetLength = 2
     prevFrequentItemsets = frequentOneItemsets
-    currentFrequentItemsets = frequentOneItemsets
 
-    while(len(currentFrequentItemsets) > 0):
+    while(len(prevFrequentItemsets) > 0):
         #generate candidate itemsets of size itemSetLength by joining size itemSetLength - 1 itemsets
         candidateItemsets = termJoins(prevFrequentItemsets, itemSetLength)
         #prune candidates based on their subsets
         prunedCandidates = prune(candidateItemsets, itemSetLength, prevFrequentItemsets)
         #check minimum support and eliminate infrequent
-        currentFrequentItemsets = minSup(prunedCandidates, lineList, minSupThres)
+        currentFrequentItemsets = minSup(prunedCandidates, lineList, minSupThres, file)
         #add current length frequent itemsets to final list
         finalFrequentItemsets.update(currentFrequentItemsets)
+        print(str(itemSetLength) + " length sets " + str(len(currentFrequentItemsets)))
 
         #increment 
         itemSetLength += 1
@@ -164,19 +173,37 @@ def aprioriLoop(lineList, minSupThres, frequentOneItemsets, finalFrequentItemset
 
 
 
-def apriori(lineList, minSupThres):
-    finalFrequentItemsets = set()
+def apriori(lineList, minSupThres, fileName):
+    # Open the file in write mode ('w')
+    with open(fileName, 'w') as file:
 
-    termDict = termInitialize(lineList)
-    frequentTerms = {name: frequency for name, frequency in termDict.items() if frequency >= minSupThres}
-    frequentOneItemsets = dictToSet(frequentTerms)
+        finalFrequentItemsets = set()
 
-    finalFrequentItemsets.update(frequentOneItemsets)
+        termDict = termInitialize(lineList)
+        frequentTerms = {name: frequency for name, frequency in termDict.items() if frequency >= minSupThres}
+        frequentOneItemsets = dictToSet(frequentTerms)
 
-    aprioriLoop(lineList, minSupThres, frequentOneItemsets, finalFrequentItemsets)
+        for key in frequentTerms:
+            file.write(f"{frequentTerms[key]}:{key}\n")
+
+        finalFrequentItemsets.update(frequentOneItemsets)
+
+        aprioriLoop(lineList, minSupThres, frequentOneItemsets, finalFrequentItemsets, file)
 
     print(finalFrequentItemsets)
 
 
-apriori(lineList, 771)
+# categoryDict = termInitialize(lineList)
 
+# filtered_dict = {name: frequency for name, frequency in categoryDict.items() if frequency >= 771.85}
+
+# print(filtered_dict)
+
+# # Open the file in write mode ('w')
+# with open('patterns.txt', 'w') as file:
+#     for key in filtered_dict:
+#         print(f"{filtered_dict[key]}:{key}")
+#         file.write(f"{filtered_dict[key]}:{key}\n")
+
+
+apriori(lineList, 771.85, 'patterns.txt')
